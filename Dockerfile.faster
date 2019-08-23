@@ -15,9 +15,8 @@ RUN groupadd -r freeswitch --gid=999 && useradd -r -g freeswitch --uid=999 frees
     && rm /usr/local/bin/gosu.asc \
     && chmod +x /usr/local/bin/gosu \
 # make the "en_US.UTF-8" locale so freeswitch will be utf-8 enabled by default
-    && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8 \
-# clean up to reduce image size (?)
-    && rm -rf /var/lib/apt/lists/* && apt-get purge -y --auto-remove wget gnupg2 ca-certificates
+    && localedef -i en_US -c -f UTF-8 -A /usr/share/locale/locale.alias en_US.UTF-8 
+
 ENV LANG en_US.utf8
 
 ENV FS_MAJOR 1.10
@@ -26,8 +25,7 @@ RUN sed -i "s/buster main/buster main contrib non-free/" /etc/apt/sources.list
 
 # https://freeswitch.org/confluence/display/FREESWITCH/Debian+10+Buster
 
-RUN apt-get update && apt-get install -y wget gnupg2 \
-    && wget -O - https://files.freeswitch.org/repo/deb/debian-release/fsstretch-archive-keyring.asc | apt-key add - \
+RUN wget -O - https://files.freeswitch.org/repo/deb/debian-release/fsstretch-archive-keyring.asc | apt-key add - \
     && echo "deb http://files.freeswitch.org/repo/deb/debian-release/ buster main" > /etc/apt/sources.list.d/freeswitch.list \
     && echo "deb-src http://files.freeswitch.org/repo/deb/debian-release/ buster main" >> /etc/apt/sources.list.d/freeswitch.list \
     # > Install dependencies required for the build
@@ -41,7 +39,7 @@ RUN apt-get update && apt-get install -y wget gnupg2 \
     && git config pull.rebase true \
 # > ... and do the build
     && ./bootstrap.sh -j \
-# add in mod_shout
+# add in mod_shout, ignore the existing with comment
     && sed -i "s+#formats/mod_shout+formats/mod_shout+g" modules.conf \
     && ./configure \
     && make && make install \
