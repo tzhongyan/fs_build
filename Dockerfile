@@ -47,7 +47,7 @@ RUN apt-get update && apt-get install -y wget gnupg2 \
     && make && make install \
 # Clean up
     && rm -rf /var/lib/apt/lists/* \ 
-    && apt-get purge -y --auto-remove mk-duild-deps wget \
+    && apt-get purge -y --auto-remove gnupg2 wget \
     && apt-get purge -y --autoremove $(apt-cache showsrc freeswitch | sed -e '/Build-Depends/!d;s/Build-Depends: \|,\|([^)]*),*\|\[[^]]*\]//g') \
     && apt-get clean && apt-get autoremove
 
