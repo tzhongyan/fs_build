@@ -4,7 +4,7 @@ An edit from original FreeSWITCH Dockerfile, and I need the mod_shout for shit t
 # What it does
 - Pulling from tag v1.10 from stable
 - Build with `docker build -t REP:TAG .`
-- Run with `docker run -d -v $(pwd)/conf:/etc/freeswitch -v $(pwd)/tmp:/tmp REP:TAG` or whatever the Windows equivalent is
+- Run with `docker run -d -v $(pwd)/conf/:/usr/local/freeswitch/conf/ -v $(pwd)/tmp:/tmp REP:TAG` or whatever the Windows equivalent is
 
 Oh ya, make sure your FreeSWITCH configuration is there.
 
