@@ -6,7 +6,7 @@ FROM debian:buster
 
 # explicitly set user/group IDs
 RUN groupadd -r freeswitch --gid=999 && useradd -r -g freeswitch --uid=999 freeswitch \
-    && apt-get update && apt-get install -yq gnupg2 wget git locales ca-certificates \
+    && apt-get update && apt-get install -yq gnupg2 wget locales ca-certificates \
 # grab gosu for easy step-down from root
     && gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
     && wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/1.11/gosu-$(dpkg --print-architecture | awk -F- '{ print $NF }')" \
@@ -26,7 +26,7 @@ RUN sed -i "s/buster main/buster main contrib non-free/" /etc/apt/sources.list
 
 # https://freeswitch.org/confluence/display/FREESWITCH/Debian+10+Buster
 
-RUN apt-get update && apt-get install -y wget gnupg2 \
+RUN apt-get update && apt-get install -yq wget gnupg2 git \
     && wget -O - https://files.freeswitch.org/repo/deb/debian-release/fsstretch-archive-keyring.asc | apt-key add - \
     && echo "deb http://files.freeswitch.org/repo/deb/debian-release/ buster main" > /etc/apt/sources.list.d/freeswitch.list \
     && echo "deb-src http://files.freeswitch.org/repo/deb/debian-release/ buster main" >> /etc/apt/sources.list.d/freeswitch.list \
@@ -43,12 +43,14 @@ RUN apt-get update && apt-get install -y wget gnupg2 \
     && ./bootstrap.sh -j \
 # add in mod_shout
     && sed -i "s+#formats/mod_shout+formats/mod_shout+g" modules.conf \
+# make sure event socket is enabled
+    && sed -i "s+#formats/mod_event_socket+formats/mod_event_socket+g" modules.conf \
     && ./configure \
     && make && make install \
 # Clean up
     && rm -rf /var/lib/apt/lists/* \ 
-    && apt-get purge -y --auto-remove gnupg2 wget \
-    && apt-get purge -y --autoremove $(apt-cache showsrc freeswitch | sed -e '/Build-Depends/!d;s/Build-Depends: \|,\|([^)]*),*\|\[[^]]*\]//g') \
+    && apt-get purge -y --auto-remove gnupg2 wget git \
+    # && apt-get purge -y --autoremove $(apt-cache showsrc freeswitch | sed -e '/Build-Depends/!d;s/Build-Depends: \|,\|([^)]*),*\|\[[^]]*\]//g') \
     && apt-get clean && apt-get autoremove
 
 COPY docker-entrypoint.sh /
@@ -63,7 +65,7 @@ EXPOSE 64535-65535/udp
 
 # Volumes
 ## Freeswitch Configuration
-VOLUME ["/etc/freeswitch"]
+VOLUME ["/usr/local/freeswitch/conf"]
 ## Tmp so we can get core dumps out
 VOLUME ["/tmp"]
 
