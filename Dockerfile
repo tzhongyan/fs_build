@@ -8,7 +8,7 @@ FROM debian:buster
 RUN groupadd -r freeswitch --gid=999 && useradd -r -g freeswitch --uid=999 freeswitch \
     && apt-get update && apt-get install -yq gnupg2 wget locales ca-certificates \
 # grab gosu for easy step-down from root
-    && gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
+    && DEBIAN_FRONTEND=noninteractive gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys B42F6819007F00F88E364FD4036A9C25BF357DD4 \
     && wget -O /usr/local/bin/gosu "https://github.com/tianon/gosu/releases/download/1.11/gosu-$(dpkg --print-architecture | awk -F- '{ print $NF }')" \
     && wget -O /usr/local/bin/gosu.asc "https://github.com/tianon/gosu/releases/download/1.11/gosu-$(dpkg --print-architecture | awk -F- '{ print $NF }').asc" \
     && gpg --batch --verify /usr/local/bin/gosu.asc /usr/local/bin/gosu \
@@ -34,28 +34,30 @@ RUN apt-get update && apt-get install -yq wget gnupg2 git \
     && echo "deb http://files.freeswitch.org/repo/deb/debian-release/ buster main" > /etc/apt/sources.list.d/freeswitch.list \
     && echo "deb-src http://files.freeswitch.org/repo/deb/debian-release/ buster main" >> /etc/apt/sources.list.d/freeswitch.list \
     # > Install dependencies required for the build
-    && apt-get update && apt-get build-dep freeswitch -y \    
+    && apt-get update && apt-get build-dep freeswitch -yq \
+    # && aptitude markauto $(apt-cache showsrc freeswitch | sed -e '/Build-Depends/!d;s/Build-Depends: \|,\|([^)]*),*\|\[[^]]*\]//g') \
 # > ... and do the build
     && ./bootstrap.sh -j \
 # add in mod_shout
     && sed -i "s+#formats/mod_shout+formats/mod_shout+g" modules.conf \
-# make sure event socket is enabled
-    && sed -i "s+#formats/mod_event_socket+formats/mod_event_socket+g" modules.conf \
+# using mod_xml_curl
+    && sed -i "s+#formats/mod_xml_curl+formats/mod_xml_curl+g" modules.conf \
     && ./configure \
     && make && make install \
 # Clean up
+    && apt-get purge -y --auto-remove gnupg2 wget git aptitude build-essentials \
+    && apt-get clean && apt-get autoremove \
     && rm -rf /var/lib/apt/lists/* \ 
-    && apt-get purge -y --auto-remove gnupg2 wget git \
-    # && apt-get purge -y --autoremove $(apt-cache showsrc freeswitch | sed -e '/Build-Depends/!d;s/Build-Depends: \|,\|([^)]*),*\|\[[^]]*\]//g') \
-    && apt-get clean && apt-get autoremove
+    && cd /usr/src && rm -rf freeswitch
 
+WORKDIR /
 COPY docker-entrypoint.sh /
 ## Ports
 # Open the container up to the world.
 ### 8021 fs_cli, 5060 5061 5080 5081 sip and sips, 64535-65535 rtp
 EXPOSE 8021/tcp
-EXPOSE 5060/tcp 5060/udp 5080/tcp 5080/udp
-EXPOSE 5061/tcp 5061/udp 5081/tcp 5081/udp
+EXPOSE 23340/tcp 23340/udp 5080/tcp 5080/udp
+EXPOSE 23341/tcp 23341/udp 5081/tcp 5081/udp
 EXPOSE 64535-65535/udp
 
 WORKDIR /usr/src/freeswitch/conf
@@ -80,3 +82,4 @@ HEALTHCHECK --interval=15s --timeout=5s \
 ENTRYPOINT ["/docker-entrypoint.sh"]
 
 CMD ["freeswitch"]
+

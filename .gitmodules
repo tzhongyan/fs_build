@@ -1,0 +1,4 @@
+[submodule "freeswitch"]
+	path = freeswitch
+	url = https://freeswitch.org/stash/scm/fs/freeswitch.git
+	branch = v1.10
