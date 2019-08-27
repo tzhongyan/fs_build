@@ -45,7 +45,7 @@ RUN apt-get update && apt-get install -yq wget gnupg2 git \
     && ./configure \
     && make && make install \
 # Clean up
-    && apt-get purge -y --auto-remove gnupg2 wget git aptitude build-essentials \
+    && apt-get purge -y --auto-remove gnupg2 wget git aptitude gcc g++ \
     && apt-get clean && apt-get autoremove \
     && rm -rf /var/lib/apt/lists/* \ 
     && cd /usr/src && rm -rf freeswitch
